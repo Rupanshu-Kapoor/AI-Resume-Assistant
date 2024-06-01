@@ -1,0 +1,13 @@
+2024-06-01 12:41:43,755 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-06-01 12:41:43,763 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2024-06-01 12:41:43,763 - werkzeug - INFO -  * Restarting with stat
+2024-06-01 12:41:44,178 - werkzeug - WARNING -  * Debugger is active!
+2024-06-01 12:41:44,186 - werkzeug - INFO -  * Debugger PIN: 256-112-566
+2024-06-01 12:41:55,610 - werkzeug - INFO -  * Detected change in 'D:\\RupanshuKapoor\\Projects\\Machine Learning\\CAPSTONE\\AI resume Builder\\src\\app.py', reloading
+2024-06-01 12:41:55,747 - werkzeug - INFO -  * Restarting with stat
+2024-06-01 12:41:56,300 - werkzeug - WARNING -  * Debugger is active!
+2024-06-01 12:41:56,310 - werkzeug - INFO -  * Debugger PIN: 256-112-566
+2024-06-01 12:45:21,621 - werkzeug - INFO -  * Detected change in 'D:\\RupanshuKapoor\\Projects\\Machine Learning\\CAPSTONE\\AI resume Builder\\src\\logging_config.py', reloading
+2024-06-01 12:45:21,783 - werkzeug - INFO -  * Restarting with stat
+2024-06-01 13:12:43,029 - werkzeug - INFO -  * Restarting with stat
