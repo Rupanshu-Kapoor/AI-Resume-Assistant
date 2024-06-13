@@ -25,8 +25,8 @@ data_science_skills = ['queries', 'beautifulsoup', 'ms excel', 'mathematics', 's
                        'aws', 'sql']
 
 essential_skills = ["Python", "SQL", "MySQL", "R", "Tableau", "TensorFlow", "NumPy", 
-                    "statsmodels", "PyTorch", "Keras", "OpenCV", "NLTK", "CNN", "ANN",
-                    "RNN", "Machine Learning", "Deep Learning", "SciKit Learn", "MS Excel"
+                    "Statsmodels", "PyTorch", "Keras", "OpenCV", "NLTK", "CNN", "ANN",
+                    "RNN", "Machine Learning", "Deep Learning", "SciKit Learn", "MS Excel",
                     "Data Visualization", "Power BI", "Data Analysis"]
 
 quality_mapping = {

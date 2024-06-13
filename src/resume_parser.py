@@ -39,7 +39,7 @@ class ResumeParser:
     def extract_skills_from_resume(self, text):
         skills = []
 
-        for skill in data_science_skills:
+        for skill in essential_skills:
             pattern = r"\b{}\b".format(re.escape(skill))
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
@@ -86,17 +86,23 @@ class ResumeParser:
         resume_data = {}
         logger.debug('parsing text')
         text = self.extract_text_from_pdf(path)
-        logger.debug("extracting contact number")
-        resume_data["contact_number"] = self.extract_contact_number_from_resume(text)
-        logger.debug("extracting email")
-        resume_data["email"] = self.extract_email_from_resume(text)
-        skills , found_keywords = self.extract_skills_from_resume(text)  
-        resume_data["skills"] = skills    
-        resume_data["found_keywords"] = found_keywords  
+        skills_found, found_keywords = self.extract_skills_from_resume(text)
+        resume_data = {
+            "name": self.extract_name(text),
+            "contact_number": self.extract_contact_number_from_resume(text),
+            "email": self.extract_email_from_resume(text),
+            "skills": skills_found,
+            "found_keywords": found_keywords,
+            "text": text
+        }
         resume_data["text"] = text
         
-        found_keywords = len(resume_data["found_keywords"])  
-        num_keywords = len(keyword_variations)
+        # create list of skills that are present in essesnial_skills but not in skills_found
+        missing_skills = list(set(essential_skills) - set(skills_found))
+        resume_data["missing_skills"] = missing_skills
+
+        found_keywords = len(resume_data["found_keywords"])
+        num_keywords = len(essential_skills)
         
         for quality, threshold in quality_mapping.items():
             if found_keywords < num_keywords * threshold:
