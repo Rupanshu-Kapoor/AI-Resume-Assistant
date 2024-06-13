@@ -14,6 +14,7 @@ class ResumeReviewer:
         pass
         # split the text into lines
         # lines = text.splitlines()
+        pass
 
         # check for grammer mistakes in each line
         # for line in lines:
