@@ -1,7 +1,7 @@
 # python file to parse different section from resume
 from pdfminer.high_level import extract_text
 import re
-from config import data_science_skills
+from config import data_science_skills ,keyword_variations
 import spacy
 from spacy.matcher import Matcher
 import logging
@@ -43,10 +43,17 @@ class ResumeParser:
             pattern = r"\b{}\b".format(re.escape(skill))
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                skills.append(skill)
+                skills.append(skill) 
 
-        return skills
-    
+        found_keywords = []
+        for keyword, variations in keyword_variations.items():
+            for variation in variations:
+                if variation.lower() in map(str.lower, skills):  # Convert both variation and skills to lowercase
+                    found_keywords.append(keyword)
+                    break  # Once a keyword is found, no need to check its other variations
+
+        return skills, found_keywords
+
     def extract_name(self, resume_text):
         nlp = spacy.load('en_core_web_sm')
         matcher = Matcher(nlp.vocab)
@@ -71,15 +78,38 @@ class ResumeParser:
 
         return None
     
+   
     def parse_text(self, path):
         logger = logging.getLogger(__name__)
         resume_data = {}
-        logger.debug('pasing text')
+        logger.debug('parsing text')
         text = self.extract_text_from_pdf(path)
         logger.debug("extracting contact number")
         resume_data["contact_number"] = self.extract_contact_number_from_resume(text)
-        logger.debug("extracting emai")
+        logger.debug("extracting email")
         resume_data["email"] = self.extract_email_from_resume(text)
-        resume_data["skills"] = self.extract_skills_from_resume(text)
+        skills = self.extract_skills_from_resume(text)  # Extract skills only
+        resume_data["skills"] = skills    # yaha aapko sirf skills chaiye show krwnae k liye 
+        found_keywords = self.extract_skills_from_resume(text) # Extract found_keywords only
+        resume_data["found_keywords"] = found_keywords   # but  main problem is yaha  aapko itne sare (found_keywords) show nahi kerwane h ,so dek lena thoda 
         resume_data["text"] = text
+        
+        found_keywords = len(resume_data["found_keywords"])  # yaha mujhe(extract_skills_from_resume) se sirf list of  keywords chaiye 
+        num_keywords = len(keyword_variations)
+        
+        if found_keywords < num_keywords * 0.15:
+            resume_data["quality"] = "Resume needs significant improvement" # mene new option "quality" me sb dala h 
+        elif num_keywords * 0.15 <= found_keywords < num_keywords * 0.35:
+            resume_data["quality"] = "Resume needs improvement"
+        elif num_keywords * 0.35 <= found_keywords < num_keywords * 0.55:
+            resume_data["quality"] = "Resume is average"
+        elif num_keywords * 0.55 <= found_keywords < num_keywords * 0.75:
+            resume_data["quality"] = "Resume is good"
+        elif num_keywords * 0.75 <= found_keywords < num_keywords * 0.90:
+            resume_data["quality"] = "Resume is very good"
+        elif num_keywords * 0.90 <= found_keywords <= num_keywords:
+            resume_data["quality"] = "Resume is excellent"
+        else:
+            resume_data["quality"] = "The resume is bad"
+
         return resume_data

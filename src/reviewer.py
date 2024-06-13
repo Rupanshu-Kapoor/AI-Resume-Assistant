@@ -11,8 +11,9 @@ class ResumeReviewer:
         pass
 
     def grammar_check(self, text):
+        pass
         # split the text into lines
-        lines = text.splitlines()
+        # lines = text.splitlines()
 
         # check for grammer mistakes in each line
         # for line in lines:
