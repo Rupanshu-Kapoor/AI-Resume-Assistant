@@ -1,7 +1,7 @@
 # python file to parse different section from resume
 from pdfminer.high_level import extract_text
 import re
-from config import data_science_skills , keyword_variations # yaha ye import kiya ,and config file me data dala h 
+from config import data_science_skills , keyword_variations, essential_skills, quality_mapping 
 import spacy
 from spacy.matcher import Matcher
 import logging
@@ -90,28 +90,17 @@ class ResumeParser:
         resume_data["contact_number"] = self.extract_contact_number_from_resume(text)
         logger.debug("extracting email")
         resume_data["email"] = self.extract_email_from_resume(text)
-        skills = self.extract_skills_from_resume(text)  # Extract skills only
-        resume_data["skills"] = skills    # yaha aapko sirf skills chaiye show krwnae k liye 
-        found_keywords = self.extract_skills_from_resume(text) # Extract found_keywords only
-        resume_data["found_keywords"] = found_keywords   # but  main problem is yaha  aapko itne sare (found_keywords) show nahi kerwane h ,so dek lena thoda 
+        skills , found_keywords = self.extract_skills_from_resume(text)  
+        resume_data["skills"] = skills    
+        resume_data["found_keywords"] = found_keywords  
         resume_data["text"] = text
         
-        found_keywords = len(resume_data["found_keywords"])  # yaha mujhe(extract_skills_from_resume) se sirf list of  keywords chaiye 
+        found_keywords = len(resume_data["found_keywords"])  
         num_keywords = len(keyword_variations)
         
-        if found_keywords < num_keywords * 0.15:
-            resume_data["quality"] = "Resume needs significant improvement" # mene new option "quality" me sb dala h 
-        elif num_keywords * 0.15 <= found_keywords < num_keywords * 0.35:
-            resume_data["quality"] = "Resume needs improvement"
-        elif num_keywords * 0.35 <= found_keywords < num_keywords * 0.55:
-            resume_data["quality"] = "Resume is average"
-        elif num_keywords * 0.55 <= found_keywords < num_keywords * 0.75:
-            resume_data["quality"] = "Resume is good"
-        elif num_keywords * 0.75 <= found_keywords < num_keywords * 0.90:
-            resume_data["quality"] = "Resume is very good"
-        elif num_keywords * 0.90 <= found_keywords <= num_keywords:
-            resume_data["quality"] = "Resume is excellent"
-        else:
-            resume_data["quality"] = "The resume is bad"
+        for quality, threshold in quality_mapping.items():
+            if found_keywords < num_keywords * threshold:
+                resume_data["quality"] = quality
+                break
 
         return resume_data

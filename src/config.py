@@ -5,8 +5,39 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, '..', 'data', 'uploads')
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 
 
+data_science_skills = ['queries', 'beautifulsoup', 'ms excel', 'mathematics', 'selenium', 
+                       'html', 'analytical skills', 'statsmodels','ai', 'improvement', 
+                       'analyze', 'metrics', 'forecasting', 'analytics', 'analytical', 
+                       'mysql', 'postgresql', 'database', 'writing', 'excel','regulations', 
+                       'algorithms', 'scipy', 'opencv', 'reports',  'eda', 'jupyter', 
+                       'presentations', 'modeling', 'audit', 'technical skills', 
+                       'schedule', 'nltk', 'iso', 'xgboost', 'segmentation', 'github', 
+                       'seaborn', 'keras', 'distribution', 'investigation', 'tableau',
+                       'probability', 'analysis', 'r', 'technical', 'programming', 
+                       'web scraping', 'research', 'pandas', 'statistical analysis', 
+                       'numpy', 'predictive analysis', 'tensorflow', 'hypothesis', 
+                       'matplotlib', 'scikit-learn', 'information technology', 
+                       'machine learning', 'cloud', 'streamlit', 'mining', 'python', 
+                       'data analytics', 'deep learning', 'testing', 'training', 
+                       'clustering & classification', 'data analysis', 'engineering', 
+                       'data visualization', 'quantitative analysis', 'statistics', 
+                       'flask', 'statistical modeling', 'pytorch', 'data mining', 
+                       'aws', 'sql']
 
-data_science_skills = ['queries', 'beautifulsoup', 'ms excel', 'mathematics', 'selenium', 'html', 'analytical skills', 'statsmodels','ai', 'improvement', 'analyze', 'metrics', 'forecasting', 'analytics', 'analytical', 'mysql', 'postgresql', 'database', 'writing', 'excel','regulations', 'algorithms', 'scipy', 'opencv', 'reports',  'eda', 'jupyter', 'presentations', 'modeling', 'audit', 'technical skills', 'schedule', 'nltk', 'iso', 'xgboost', 'segmentation', 'github', 'seaborn', 'keras', 'distribution', 'investigation', 'tableau','probability', 'analysis', 'r', 'technical', 'programming', 'web scraping', 'research', 'pandas', 'statistical analysis', 'numpy', 'predictive analysis', 'tensorflow', 'hypothesis', 'matplotlib', 'scikit-learn', 'information technology', 'machine learning', 'cloud', 'streamlit', 'mining', 'python', 'data analytics', 'deep learning', 'testing', 'training', 'clustering & classification', 'data analysis', 'engineering', 'data visualization', 'quantitative analysis', 'statistics', 'flask', 'statistical modeling', 'pytorch', 'data mining', 'aws', 'sql']
+essential_skills = ["Python", "SQL", "MySQL", "R", "Tableau", "TensorFlow", "NumPy", 
+                    "statsmodels", "PyTorch", "Keras", "OpenCV", "NLTK", "CNN", "ANN",
+                    "RNN", "Machine Learning", "Deep Learning", "SciKit Learn", "MS Excel"
+                    "Data Visualization", "Power BI", "Data Analysis"]
+
+quality_mapping = {
+            'Resume needs significant improvement': 0.15,
+            'Resume needs improvement': 0.35,
+            'Resume is average': 0.55,
+            'Resume is good': 0.75,
+            'Resume is very good': 0.90,
+            'Resume is excellent': 1,
+            'The resume is bad': 1.1
+        }
 
 keyword_variations = {
         "Python": ["Python", "Python_Language", "Python Programming"],
