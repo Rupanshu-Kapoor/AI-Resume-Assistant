@@ -1,10 +1,9 @@
 # python file to parse different section from resume
 from pdfminer.high_level import extract_text
-import re
-from config import data_science_skills , keyword_variations, essential_skills, quality_mapping, required_sections 
-import spacy
+import re, fitz, spacy, logging  
+from config import data_science_skills, keyword_variations, essential_skills, quality_mapping
+from config import required_sections, linkedin_domain, github_domain
 from spacy.matcher import Matcher
-import logging
 
 
 class ResumeParser:
@@ -44,8 +43,8 @@ class ResumeParser:
             match = re.search(pattern, text, re.IGNORECASE)
             if not match:
                 sections.append(section)
-
         return sections
+    
     def extract_skills_from_resume(self, text):
         skills = []
 
@@ -63,9 +62,33 @@ class ResumeParser:
                     break  # Once a keyword is found, no need to check its other variations
 
         return skills, found_keywords
+    
+    def extract_linkedIn_urls_from_pdf(self, pdf_path):
+        linkedin_urls = None
+        pdf_document = fitz.open(pdf_path)
+        for page_num in range(len(pdf_document)):
+            page = pdf_document.load_page(page_num)
+            links = page.get_links()
+            for link in links:
+                url = link.get('uri', '')
+                if re.search(linkedin_domain, url):
+                    linkedin_urls = url
+        pdf_document.close()
+        return linkedin_urls
 
-
-            
+    def extract_github_urls_from_pdf(self, pdf_path):
+        github_urls = None
+        pdf_document = fitz.open(pdf_path)
+        for page_num in range(len(pdf_document)):
+            page = pdf_document.load_page(page_num)
+            links = page.get_links()
+            for link in links:
+                url = link.get('uri', '')
+                if re.search(github_domain, url):
+                    github_urls = url
+        pdf_document.close()
+        return github_urls    
+          
     def extract_name(self, resume_text):
         nlp = spacy.load('en_core_web_sm')
         matcher = Matcher(nlp.vocab)
@@ -101,6 +124,8 @@ class ResumeParser:
             "name": self.extract_name(text),
             "contact_number": self.extract_contact_number_from_resume(text),
             "email": self.extract_email_from_resume(text),
+            "linkedin_urls": self.extract_linkedIn_urls_from_pdf(path),
+            "github_urls": self.extract_github_urls_from_pdf(path),            
             "skills": skills_found,
             "found_keywords": found_keywords,
             "text": text

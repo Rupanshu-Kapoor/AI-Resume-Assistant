@@ -3,6 +3,8 @@ import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, '..', 'data', 'uploads')
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+linkedin_domain = (r'https?://(www\.)?linkedin\.com/[^\s<>"]')
+github_domain = (r'https?://(www\.)?github\.com/[^\s<>"]')
 
 required_sections = ['Summary','Education','EXPERIENCE','INTERNSHIPS','SKILLS','HOBBIES',
                                 'INTERESTS','ACHIEVEMENTS','CERTIFICATIONS','PROJECTS']
