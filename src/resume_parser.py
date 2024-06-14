@@ -1,7 +1,7 @@
 # python file to parse different section from resume
 from pdfminer.high_level import extract_text
 import re
-from config import data_science_skills , keyword_variations, essential_skills, quality_mapping 
+from config import data_science_skills , keyword_variations, essential_skills, quality_mapping, required_sections 
 import spacy
 from spacy.matcher import Matcher
 import logging
@@ -36,6 +36,16 @@ class ResumeParser:
 
         return email
     
+    def extract_sections_from_resume(self, text):
+        sections = []
+
+        for section in required_sections:
+            pattern = r"\b{}\b".format(re.escape(section))
+            match = re.search(pattern, text, re.IGNORECASE)
+            if not match:
+                sections.append(section)
+
+        return sections
     def extract_skills_from_resume(self, text):
         skills = []
 
@@ -109,4 +119,5 @@ class ResumeParser:
                 resume_data["quality"] = quality
                 break
 
+        resume_data["missing_sections"] = self.extract_sections_from_resume(text)
         return resume_data
