@@ -53,15 +53,17 @@ class ResumeParser:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 skills.append(skill) 
-
+        return skills
+    
+    def extract_keyword_variations_from_resume(self, text):
         found_keywords = []
         for keyword, variations in keyword_variations.items():
             for variation in variations:
-                if variation.lower() in map(str.lower, skills):  # Convert both variation and skills to lowercase
+                if variation.lower() in (text.lower()):  # Convert both variation and text to lowercase
                     found_keywords.append(keyword)
                     break  # Once a keyword is found, no need to check its other variations
 
-        return skills, found_keywords
+        return found_keywords
     
     def extract_linkedIn_urls_from_pdf(self, pdf_path):
         linkedin_urls = None
@@ -119,7 +121,9 @@ class ResumeParser:
         resume_data = {}
         logger.debug('parsing text')
         text = self.extract_text_from_pdf(path)
-        skills_found, found_keywords = self.extract_skills_from_resume(text)
+        skills_found = self.extract_skills_from_resume(text)
+        found_keywords = self.extract_keyword_variations_from_resume(text)
+
         resume_data = {
             "name": self.extract_name(text),
             "contact_number": self.extract_contact_number_from_resume(text),
@@ -137,7 +141,7 @@ class ResumeParser:
         resume_data["missing_skills"] = missing_skills
 
         found_keywords = len(resume_data["found_keywords"])
-        num_keywords = len(essential_skills)
+        num_keywords = len(keyword_variations)
         
         for quality, threshold in quality_mapping.items():
             if found_keywords < num_keywords * threshold:
