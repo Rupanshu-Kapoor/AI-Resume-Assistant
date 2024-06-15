@@ -9,6 +9,8 @@ github_domain = (r'https?://(www\.)?github\.com/[^\s<>"]')
 required_sections = ['Summary','Education','EXPERIENCE','INTERNSHIPS','SKILLS','HOBBIES',
                                 'INTERESTS','ACHIEVEMENTS','CERTIFICATIONS','PROJECTS']
 
+important_sections = ["name", "contact_number", "email", "linkedin_urls", "github_urls"]
+
 data_science_skills = ['queries', 'beautifulsoup', 'ms excel', 'mathematics', 'selenium', 
                        'html', 'analytical skills', 'statsmodels','ai', 'improvement', 
                        'analyze', 'metrics', 'forecasting', 'analytics', 'analytical', 

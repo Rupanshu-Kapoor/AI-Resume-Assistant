@@ -2,7 +2,7 @@
 from pdfminer.high_level import extract_text
 import re, fitz, spacy, logging  
 from config import data_science_skills, keyword_variations, essential_skills, quality_mapping
-from config import required_sections, linkedin_domain, github_domain
+from config import required_sections, linkedin_domain, github_domain, important_sections
 from spacy.matcher import Matcher
 
 
@@ -115,7 +115,13 @@ class ResumeParser:
 
         return None
     
-    
+    def check_missing_sections(self, resume_data):
+        missing_information = []
+        for section in important_sections:
+            if not resume_data.get(section):
+                    missing_information.append(section)
+        return missing_information
+            
     def parse_text(self, path):
         logger = logging.getLogger(__name__)
         resume_data = {}
@@ -136,6 +142,14 @@ class ResumeParser:
         }
         resume_data["text"] = text
         
+        missing_important_sections = self.check_missing_sections(resume_data)
+        resume_data["basic_information_section"] = missing_important_sections
+
+        if not resume_data["basic_information_section"]:
+            resume_data["basic_information_section"] = "Basic information is Found"
+        else:
+            resume_data["basic_information_section"] = "Basic information is missing: " + ", ".join(list(missing_important_sections))
+
         # create list of skills that are present in essesnial_skills but not in skills_found
         missing_skills = list(set(essential_skills) - set(skills_found))
         resume_data["missing_skills"] = missing_skills
@@ -150,3 +164,4 @@ class ResumeParser:
 
         resume_data["missing_sections"] = self.extract_sections_from_resume(text)
         return resume_data
+    
