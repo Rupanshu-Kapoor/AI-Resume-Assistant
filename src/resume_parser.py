@@ -18,25 +18,52 @@ class ResumeParser:
     
     def extract_contact_number_from_resume(self, text):
         contact_number = None
+        suggestion = ""
 
         # Use regex pattern to find a potential contact number
         pattern = r"\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"
         match = re.search(pattern, text)
         if match:
             contact_number = match.group()
-
-        return contact_number
+            # Check if the contact number is of the correct length
+            digits_only = re.sub(r'\D', '', contact_number)
+            if len(digits_only) == 10:
+                suggestion = ""
+            elif len(digits_only) > 10 and digits_only.startswith('91') and len(digits_only[2:]) == 10:
+                suggestion = ""
+            else:
+                suggestion = "Contact number should have exactly 10 digits."
+        
+        return contact_number, suggestion
     
     def extract_email_from_resume(self, text):
         email = None
+        suggestion = ""
 
         # Use regex pattern to find a potential email address
         pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
         match = re.search(pattern, text)
         if match:
             email = match.group()
-
-        return email
+            # Additional validation
+            if not self.is_valid_email(email):
+                suggestion += "your email address doesn't seem to be valid. Please check and correct."
+        return email, suggestion
+    
+    def is_valid_email(self, email):
+        # Length check
+        if len(email) > 254:
+            return False
+        
+        # Consecutive special characters check
+        if re.search(r"[._%+-]{2,}", email):
+            return False
+        
+        # Domain part validation
+        domain_part = email.split('@')[1]
+        if not re.match(r"[A-Za-z0-9.-]+\.[A-Za-z]{2,}", domain_part):
+            return False
+        return True
     
     def extract_sections_from_resume(self, text):
         sections = []
@@ -115,9 +142,20 @@ class ResumeParser:
         for i in range(len(name_lines)):
             if self.is_valid_name(name_lines[i].strip()):
                 names.append(name_lines[i].strip())
+                
         if len(names) >= 1:
-            return names[0]
-        return None
+            name = names[0]
+            suggestion = ""
+            # Check if the name parts contain only alphabetic characters
+            name_parts = name.split()
+            if not all(part.replace("-", "").replace("'", "").isalpha() for part in name_parts):
+                suggestion += "Name should contain only English alphabets. "
+            elif any(part[0].islower() for part in name_parts) or any(part[1:].isupper() for part in name_parts):
+                suggestion += "Each name part should start with a capital letter. "
+            return name, suggestion
+
+        return None, "No valid name found"
+ 
     
     def check_missing_sections(self, resume_data):
         missing_information = []
@@ -155,11 +193,25 @@ class ResumeParser:
         text1 = " ".join(text.split("\n"))
         skills_found = self.extract_skills_from_resume(text)
         found_keywords = self.extract_keyword_variations_from_resume(text)
+        
+        name, name_suggestion = self.extract_name(text)
+        contact_number, contact_suggestion = self.extract_contact_number_from_resume(text)
+        email, email_suggestion = self.extract_email_from_resume(text)
+        
+        suggestions = name_suggestion + contact_suggestion + email_suggestion
+        # Adding suggestion if name, contact number, and email are not found
+        if not name:
+            suggestions += "Please add  name to the resume. "
+        if not contact_number:
+            suggestions += "Please add the contact number to the resume. "
+        if not email:
+            suggestions += "Please add the email address to the resume. "
 
         resume_data = {
-            "name": self.extract_name(text),
-            "contact_number": self.extract_contact_number_from_resume(text),
-            "email": self.extract_email_from_resume(text),
+            "name": name,
+            "info_suggestion":suggestions,
+            "contact_number": contact_number,
+            "email": email,
             "linkedin_urls": self.extract_linkedIn_urls_from_pdf(path),
             "github_urls": self.extract_github_urls_from_pdf(path),            
             "skills": skills_found,
