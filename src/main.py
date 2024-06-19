@@ -32,9 +32,7 @@ def get_reviews(path):
     resume_parser = ResumeParser()
     resume_reviewer = ResumeReviewer()
     parsed_resume = resume_parser.parse_text(path)
-    if parsed_resume:
-        reviews = resume_reviewer.grammar_check(parsed_resume)
-    return jsonify(message="reviews retrieved successfully for resume at path: {}".format(parsed_resume))
+    return parsed_resume
 
 
 @app.route("/v1/users/<int:id>", methods=['GET'])

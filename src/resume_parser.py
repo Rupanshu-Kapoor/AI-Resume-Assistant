@@ -1,9 +1,12 @@
 # python file to parse different section from resume
 from pdfminer.high_level import extract_text
+from flask import jsonify
 import re, fitz, spacy, logging  
 from config import data_science_skills, keyword_variations, essential_skills, quality_mapping
 from config import required_sections, linkedin_domain, github_domain, important_sections
 from spacy.matcher import Matcher
+import language_tool_python
+tool = language_tool_python.LanguageTool('en-US')
 
 
 class ResumeParser:
@@ -90,29 +93,30 @@ class ResumeParser:
                     github_urls = url
         pdf_document.close()
         return github_urls    
+    
+    def is_valid_name(self, name):
+        if any(char.isdigit() for char in name):
+            return False
+        if len(name.split()) > 3: 
+            return False
+        common_non_names = {"Email", "Github", "LinkedIn", "Portfolio", "Data Analyst"}
+        if name in common_non_names:
+            return False
+        return True
           
     def extract_name(self, resume_text):
-        nlp = spacy.load('en_core_web_sm')
-        matcher = Matcher(nlp.vocab)
+        
+        lines = resume_text.split('\n')
+                
+        # Use regex to find lines that likely contain names
+        name_lines = [line for line in lines if re.match(r'^[A-Za-z]*\s[A-Za-z]*$', line.strip())]
 
-        # Define name patterns
-        patterns = [
-            [{'POS': 'PROPN'}, {'POS': 'PROPN'}],  # First name and Last name
-            [{'POS': 'PROPN'}, {'POS': 'PROPN'}, {'POS': 'PROPN'}],  # First name, Middle name, and Last name
-            [{'POS': 'PROPN'}, {'POS': 'PROPN'}, {'POS': 'PROPN'}, {'POS': 'PROPN'}]  # First name, Middle name, Middle name, and Last name
-            # Add more patterns as needed
-        ]
-
-        for pattern in patterns:
-            matcher.add('NAME', patterns=[pattern])
-
-        doc = nlp(resume_text)
-        matches = matcher(doc)
-
-        for match_id, start, end in matches:
-            span = doc[start:end]
-            return span.text
-
+        names = []
+        for i in range(len(name_lines)):
+            if self.is_valid_name(name_lines[i].strip()):
+                names.append(name_lines[i].strip())
+        if len(names) >= 1:
+            return names[0]
         return None
     
     def check_missing_sections(self, resume_data):
@@ -121,12 +125,34 @@ class ResumeParser:
             if not resume_data.get(section):
                     missing_information.append(section)
         return missing_information
+    
+    def grammar_check(self, parsed_resume):
+        text = parsed_resume["new_text"]
+        matches = tool.check(text)
+        corrected_text = tool.correct(text)
+        grammar_issues = []
+        for match in matches:
+            issue = {
+                "error": match.message,
+                "suggested_correction": match.replacements,
+                "context": match.context,
+                "rule_id": match.ruleId
+            }
+            grammar_issues.append(issue)
+            grammar_result = {
+            "original_text": text,
+            "grammar_issues": grammar_issues,
+            "corrected_text": corrected_text
+            }
+
+        return grammar_result
             
     def parse_text(self, path):
         logger = logging.getLogger(__name__)
         resume_data = {}
         logger.debug('parsing text')
         text = self.extract_text_from_pdf(path)
+        text1 = " ".join(text.split("\n"))
         skills_found = self.extract_skills_from_resume(text)
         found_keywords = self.extract_keyword_variations_from_resume(text)
 
@@ -138,9 +164,10 @@ class ResumeParser:
             "github_urls": self.extract_github_urls_from_pdf(path),            
             "skills": skills_found,
             "found_keywords": found_keywords,
-            "text": text
+            "text": text,
+            "new_text": text1
         }
-        resume_data["text"] = text
+        resume_data["text"] = [text]
         
         missing_important_sections = self.check_missing_sections(resume_data)
         resume_data["basic_information_section"] = missing_important_sections
@@ -163,5 +190,8 @@ class ResumeParser:
                 break
 
         resume_data["missing_sections"] = self.extract_sections_from_resume(text)
-        return resume_data
+
+        grammar_check_result = self.grammar_check(resume_data)
+        resume_data["grammar_check_result"] = grammar_check_result
+        return jsonify(resume_data)
     
