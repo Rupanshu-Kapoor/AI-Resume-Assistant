@@ -120,8 +120,21 @@ class ResumeParser:
                     github_urls = url
         pdf_document.close()
         
-        return github_urls   
+        return github_urls  
     
+    def is_valid_url(self , github_urls ):
+            suggest = ""
+            try:
+                response = requests.head(github_urls)
+                if response.status_code == 200:
+                    suggest += ""
+                else:
+                    suggest += "GitHub URL is not valid, please check and correct. "
+            except requests.RequestException:
+                    suggest += ""
+                       
+            return suggest
+
     def is_valid_name(self, name):
         if any(char.isdigit() for char in name):
             return False
@@ -149,10 +162,8 @@ class ResumeParser:
             suggestion = ""
             # Check if the name parts contain only alphabetic characters
             name_parts = name.split()
-            if not all(part.replace("-", "").replace("'", "").isalpha() for part in name_parts):
-                suggestion += "Name should contain only English alphabets. "
-            elif any(part[0].islower() for part in name_parts) or any(part[1:].isupper() for part in name_parts):
-                suggestion += "Each name part should start with a capital letter. "
+            if any(part[0].islower() for part in name_parts):
+                suggestion += " name should start with a capital letter. "
             return name, suggestion
 
         return None, "No valid name found"
@@ -197,10 +208,13 @@ class ResumeParser:
         
         name, name_suggestion = self.extract_name(text)
         contact_number, contact_suggestion = self.extract_contact_number_from_resume(text)
-
         email, email_suggestion = self.extract_email_from_resume(text)
+        github_urls =  self.extract_github_urls_from_pdf(path)     
+        github_urls_suggestions = self.is_valid_url(github_urls)
 
-        suggestions = name_suggestion + contact_suggestion + email_suggestion 
+
+        suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions
+
         # Adding suggestion if name, contact number, and email are not found
         if not name:
             suggestions += "Please add  name to the resume. "
@@ -208,6 +222,8 @@ class ResumeParser:
             suggestions += "Please add the contact number to the resume. "
         if not email:
             suggestions += "Please add the email address to the resume. "
+        if not github_urls:
+            suggestions += " add the github_urls  to the resume. "          
 
         resume_data = {
             "name": name,
