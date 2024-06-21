@@ -13,7 +13,7 @@ setup_logging()
 def submit_resume():
     if request.method == 'POST':
         result = ResumeSubmitter().upload_file()
-        if result:
+        if os.path.exists(result):
             resume_path = result  # Get the path of the uploaded resume
             try:
                 # Redirect to the /v1/reviews/ endpoint with the resume path as a parameter
@@ -22,7 +22,7 @@ def submit_resume():
                 app.logger.error("Failed to redirect to /v1/reviews/: %s", str(e))
                 return jsonify(message="failed to redirect to reviews page"), 500
         else:
-            return jsonify(message="failed to submit resume"), 400
+            return jsonify(message=f"failed to submit resume, {result}"), 400
     else:
         return ResumeSubmitter().upload_form()
 
@@ -44,4 +44,4 @@ def greet():
     return jsonify(message="Home Page!")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

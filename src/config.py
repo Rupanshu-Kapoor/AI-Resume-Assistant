@@ -1,15 +1,15 @@
 import os
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.getcwd()
 UPLOAD_FOLDER = os.path.join(BASE_DIR, '..', 'data', 'uploads')
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+ALLOWED_EXTENSIONS = {'pdf'}
 linkedin_domain = (r'https?://(www\.)?linkedin\.com/[^\s<>"]')
 github_domain = (r'https?://(www\.)?github\.com/[^\s<>"]')
 
 required_sections = ['Summary','Education','EXPERIENCE','INTERNSHIPS','SKILLS','HOBBIES',
                                 'INTERESTS','ACHIEVEMENTS','CERTIFICATIONS','PROJECTS']
 
-important_sections = ["name", "contact_number", "email", "linkedin_urls", "github_urls"]
+basic_informations = ["name", "contact_number", "email", "linkedin_urls", "github_urls"]
 
 data_science_skills = ['queries', 'beautifulsoup', 'ms excel', 'mathematics', 'selenium', 
                        'html', 'analytical skills', 'statsmodels','ai', 'improvement', 

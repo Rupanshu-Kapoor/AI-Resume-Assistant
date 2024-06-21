@@ -16,12 +16,12 @@ class ResumeSubmitter:
 
     def upload_file(self):
         if 'file' not in request.files:
-            flash('No file part')
-            return False
+            return 'No file part'
+        
         file = request.files['file']
         if file.filename == '':
-            flash('No selected file')
-            return False
+            return 'No selected file'
+        
         if file and self.allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(UPLOAD_FOLDER, filename))
@@ -29,5 +29,4 @@ class ResumeSubmitter:
             # return file path
             return os.path.join(UPLOAD_FOLDER, filename)
         else:
-            flash('Allowed file types are pdf, doc, docx')
-            return False
+            return "Allowed file types are PDF as of now"
