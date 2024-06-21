@@ -1,9 +1,9 @@
 # python file to parse different section from resume
 from pdfminer.high_level import extract_text
 from flask import jsonify
-import re, fitz, spacy, logging  
+import re, fitz, requests, logging  
 from config import data_science_skills, keyword_variations, essential_skills, quality_mapping
-from config import required_sections, linkedin_domain, github_domain, important_sections
+from config import required_sections, linkedin_domain, github_domain, basic_informations
 from spacy.matcher import Matcher
 import language_tool_python
 tool = language_tool_python.LanguageTool('en-US')
@@ -119,7 +119,8 @@ class ResumeParser:
                 if re.search(github_domain, url):
                     github_urls = url
         pdf_document.close()
-        return github_urls    
+        
+        return github_urls   
     
     def is_valid_name(self, name):
         if any(char.isdigit() for char in name):
@@ -159,9 +160,9 @@ class ResumeParser:
     
     def check_missing_sections(self, resume_data):
         missing_information = []
-        for section in important_sections:
+        for section in basic_informations:
             if not resume_data.get(section):
-                    missing_information.append(section)
+                missing_information.append(section)
         return missing_information
     
     def grammar_check(self, parsed_resume):
@@ -196,9 +197,10 @@ class ResumeParser:
         
         name, name_suggestion = self.extract_name(text)
         contact_number, contact_suggestion = self.extract_contact_number_from_resume(text)
+
         email, email_suggestion = self.extract_email_from_resume(text)
-        
-        suggestions = name_suggestion + contact_suggestion + email_suggestion
+
+        suggestions = name_suggestion + contact_suggestion + email_suggestion 
         # Adding suggestion if name, contact number, and email are not found
         if not name:
             suggestions += "Please add  name to the resume. "

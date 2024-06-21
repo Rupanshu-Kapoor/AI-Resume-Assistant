@@ -1,49 +1,40 @@
-# Approach 1
-# C4_200M based LLM
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.options import Options
 
-import torch
-from transformers import T5Tokenizer, T5ForConditionalGeneration
-model_name = 'deep-learning-analytics/GrammarCorrector'
-torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
-tokenizer = T5Tokenizer.from_pretrained(model_name)
-model = T5ForConditionalGeneration.from_pretrained(model_name).to(torch_device)
+def is_valid_linkedin_url(url):
+    chrome_driver_path = '/usr/local/bin/chromedriver'
+    
+    # Setup Chrome options
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")  # Ensure GUI is off
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920x1080")
 
+    driver = None
+    try:
+        # Set up the webdriver
+        service = ChromeService(executable_path=chrome_driver_path)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+        # Open the URL
+        driver.get(url)
+        
+        # Check if the title contains 'LinkedIn'
+        if 'LinkedIn' in driver.title:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+    finally:
+        if driver:
+            driver.quit()
 
-def correct_grammar(input_text,num_return_sequences):
-  num_beams=10
-  batch = tokenizer([input_text],truncation=True,padding='max_length',max_length=64, return_tensors="pt").to(torch_device)
-  translated = model.generate(**batch,max_length=64,num_beams=num_beams, num_return_sequences=num_return_sequences, temperature=1.5)
-  tgt_text = tokenizer.batch_decode(translated, skip_special_tokens=True)
-  return tgt_text
-
-
-text = 'I have been working for 12 A.M'
-print(correct_grammar(text, num_return_sequences=2))
-
-
-
-
-# Approach 2
-# API implementation for grammer check
-import requests
-import json
-API_KEY = 'TKW44593kn5Eskwx'
-
-text_to_check = 'I is an engeneer.'
-
-params = {
-    'text': text_to_check,
-    'language': 'en-GB',
-    'ai': 1,
-    'key': API_KEY,
-}
-
-response = requests.get('https://api.textgears.com/grammar', params=params)
-
-if response.status_code == 200:
-    json_text = json.loads(response.text)
-    for error in json_text["response"]["errors"]:
-      print("wrong words:", error["bad"], end=" ")
-      print(", correction:", error["better"])
-else:
-    print(f"Error: Unable to check grammar. Status code: {response.status_code}")
+# Example usage
+url = "https://www.linkedin.com/in/your-profile"
+is_valid = is_valid_linkedin_url(url)
+print(f"The URL is {'valid' if is_valid else 'invalid'}")
