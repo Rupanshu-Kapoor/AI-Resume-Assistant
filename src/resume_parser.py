@@ -36,19 +36,58 @@ class ResumeParser:
         
         return contact_number, suggestion
     
-    def extract_email_from_resume(self, text):
-        email = None
-        suggestion = ""
 
-        # Use regex pattern to find a potential email address
+
+    def extract_hyperlinks(self, pdf_path):
+        doc = fitz.open(pdf_path)
+        links = []
+
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            link_list = page.get_links()
+            for link in link_list:
+                uri = link.get('uri', None)
+                if uri:
+                    links.append(uri)
+
+        return links
+
+    def extract_text_from_pdf(self, pdf_path):
+        doc = fitz.open(pdf_path)
+        text = ""
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            text += page.get_text()
+        return text
+    
+    def extract_email_from_text(self, text):
         pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
         match = re.search(pattern, text)
         if match:
-            email = match.group()
-            # Additional validation
-            if not self.is_valid_email(email):
-                suggestion += "your email address doesn't seem to be valid. Please check and correct."
+            return match.group()
+        return None
+
+    def extract_email_from_resume(self, pdf_path):
+        text = self.extract_text_from_pdf(pdf_path)
+        email = self.extract_email_from_text(text)
+        suggestion = ""
+
+        # If no email found in text, check hyperlinks
+        if not email:
+            links = self.extract_hyperlinks(pdf_path)
+            for link in links:
+                if link.startswith('mailto:'):
+                    email_candidate = link.split('mailto:')[1]
+                    if self.is_valid_email(email_candidate):
+                        email = email_candidate
+                        break
+
+        # Additional validation for email found in text or links
+        if email and not self.is_valid_email(email):
+            suggestion += "Your email address doesn't seem to be valid. Please check and correct."
+
         return email, suggestion
+    
     
     def is_valid_email(self, email):
         # Length check
@@ -63,7 +102,11 @@ class ResumeParser:
         domain_part = email.split('@')[1]
         if not re.match(r"[A-Za-z0-9.-]+\.[A-Za-z]{2,}", domain_part):
             return False
-        return True
+        
+        # Standard email format check
+        pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+        return re.match(pattern, email) is not None
+    
     
     def extract_sections_from_resume(self, text):
         sections = []
@@ -117,23 +160,29 @@ class ResumeParser:
             for link in links:
                 url = link.get('uri', '')
                 if re.search(github_domain, url):
-                    github_urls = url
+                    path = re.sub(github_domain, '', url)
+                    parts = path.split('/')
+                    if len(parts) == 1: 
+                        github_urls = url
         pdf_document.close()
-        
-        return github_urls  
+        return github_urls 
     
     def is_valid_url(self , github_urls ):
-            suggest = ""
+        suggest = ""
+        for _ in [github_urls]:  
+            if not github_urls:
+                break
+                                    
             try:
                 response = requests.head(github_urls)
-                if response.status_code == 200:
-                    suggest += ""
-                else:
-                    suggest += "GitHub URL is not valid, please check and correct. "
+                if response.status_code != 200:
+                    suggest = "GitHub URL is not valid, please check and correct. "
             except requests.RequestException:
-                    suggest += ""
+                    suggest = "GitHub URL is not valid, please check and correct. "
                        
             return suggest
+        return suggest        
+        
 
     def is_valid_name(self, name):
         if any(char.isdigit() for char in name):
@@ -208,9 +257,10 @@ class ResumeParser:
         
         name, name_suggestion = self.extract_name(text)
         contact_number, contact_suggestion = self.extract_contact_number_from_resume(text)
-        email, email_suggestion = self.extract_email_from_resume(text)
+        email, email_suggestion = self.extract_email_from_resume(path)
         github_urls =  self.extract_github_urls_from_pdf(path)     
         github_urls_suggestions = self.is_valid_url(github_urls)
+        linkedin_urls =  self.extract_linkedIn_urls_from_pdf(path)
 
 
         suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions
@@ -223,15 +273,17 @@ class ResumeParser:
         if not email:
             suggestions += "Please add the email address to the resume. "
         if not github_urls:
-            suggestions += " add the github_urls  to the resume. "          
+            suggestions += " add the github_urls to the resume. "        
+        if not linkedin_urls:
+            suggestions += " add the linkedin_urls to the resume. "                 
 
         resume_data = {
             "name": name,
             "info_suggestion":suggestions,
             "contact_number": contact_number,
             "email": email,
-            "linkedin_urls": self.extract_linkedIn_urls_from_pdf(path),
-            "github_urls": self.extract_github_urls_from_pdf(path),            
+            "linkedin_urls": linkedin_urls,
+            "github_urls": github_urls,            
             "skills": skills_found,
             "found_keywords": found_keywords,
             "text": text,
