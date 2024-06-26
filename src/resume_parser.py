@@ -109,14 +109,20 @@ class ResumeParser:
     
     
     def extract_sections_from_resume(self, text):
-        sections = []
+        missing_sections = []
+        sections_not_capitalized = []
 
         for section in required_sections:
             pattern = r"\b{}\b".format(re.escape(section))
-            match = re.search(pattern, text, re.IGNORECASE)
-            if not match:
-                sections.append(section)
-        return sections
+
+            match_obj = re.search(pattern, text, re.IGNORECASE)
+            if not match_obj:
+                missing_sections.append(section)
+            else:
+                if match_obj.group() not in map(str.upper, required_sections):
+                    sections_not_capitalized.append(section)
+
+        return missing_sections, sections_not_capitalized
     
     def extract_skills_from_resume(self, text):
         skills = []
@@ -303,6 +309,7 @@ class ResumeParser:
         missing_skills = list(set(essential_skills) - set(skills_found))
         resume_data["missing_skills"] = missing_skills
 
+
         found_keywords = len(resume_data["found_keywords"])
         num_keywords = len(keyword_variations)
         
@@ -311,7 +318,13 @@ class ResumeParser:
                 resume_data["quality"] = quality
                 break
 
-        resume_data["missing_sections"] = self.extract_sections_from_resume(text)
+        missing_sections, sections_not_capitalized = self.extract_sections_from_resume(text)
+
+        resume_data["missing_sections"] = missing_sections
+        logger.debug("Section Not Capitalized",sections_not_capitalized)
+
+        if sections_not_capitalized:
+            resume_data["sections_not_capitalized"] = sections_not_capitalized
 
         grammar_check_result = self.grammar_check(resume_data)
         resume_data["grammar_check_result"] = grammar_check_result
