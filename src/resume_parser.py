@@ -205,7 +205,7 @@ class ResumeParser:
         lines = resume_text.split('\n')
                 
         # Use regex to find lines that likely contain names
-        name_lines = [line for line in lines if re.match(r'^[A-Za-z]*\s[A-Za-z]*', line.strip())]
+        name_lines = [line for line in lines if re.match(r'^[A-Za-z]*\s[A-Za-z]*$', line.strip())]
 
         names = []
         for i in range(len(name_lines)):
