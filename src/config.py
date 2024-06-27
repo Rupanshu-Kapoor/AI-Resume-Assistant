@@ -6,7 +6,7 @@ ALLOWED_EXTENSIONS = {'pdf'}
 linkedin_domain = (r'https?://(www\.)?linkedin\.com/[^\s<>"]')
 github_domain = (r'https?://(www\.)?github\.com/[^\s<>"]')
 
-required_sections = ['PROFILE SUMMARY','EDUCATION','SKILLS','CERTIFICATIONS','PROJECTS']
+required_sections = ['PROFILE SUMMARY','ACADEMIC PROFILE','TECHNICAL SKILLS','CERTIFICATIONS','PROJECTS']
 
 basic_informations = ["name", "contact_number", "email", "linkedin_urls", "github_urls"]
 
