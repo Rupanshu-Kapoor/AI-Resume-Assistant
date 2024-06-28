@@ -138,11 +138,21 @@ class ResumeParser:
         found_keywords = []
         for keyword, variations in keyword_variations.items():
             for variation in variations:
-                if variation.lower() in (text.lower()):  # Convert both variation and text to lowercase
-                    found_keywords.append(keyword)
-                    break  # Once a keyword is found, no need to check its other variations
+                if variation in text: 
+                    found_keywords.append(variation)
+                    break  
 
         return found_keywords
+    
+    def extract_keyword_variations_from_formatted_text(self, formatted_text):
+        found_keyword_section = []
+        for keyword, variations in keyword_variations.items():
+            for variation in variations:
+                if variation in formatted_text: 
+                    found_keyword_section.append(variation)
+                    break  
+
+        return found_keyword_section
     
     def extract_linkedIn_urls_from_pdf(self, pdf_path):
         linkedin_urls = None
@@ -260,17 +270,22 @@ class ResumeParser:
                 formatted_text += f"{section}:\n{section_content}\n\n"
         return formatted_text
     
-    def replace_keywords_with_placeholders(self, fromatted_text, found_keywords):
-        placeholder_text = fromatted_text
+    def replace_keywords_with_placeholders(self, formatted_text, found_keyword_section):
+        placeholder_text = formatted_text
         keyword_placeholders = {}
         
-        for i, keyword in enumerate(found_keywords):
+        for i, keyword in enumerate(found_keyword_section):
             placeholder = f"{{KEYWORD_{i}}}"
             keyword_placeholders[placeholder] = keyword
             placeholder_text = re.sub(r'\b' + re.escape(keyword) + r'\b', placeholder, placeholder_text)
             
         return placeholder_text, keyword_placeholders
     
+    def replace_placeholders_with_keywords(self, placeholder_text, keyword_placeholders):
+        for placeholder, keyword in keyword_placeholders.items():
+            placeholder_text = placeholder_text.replace(placeholder, keyword)
+        return placeholder_text
+
     def grammar_check(self, placeholder_text):
         matches = tool.check(placeholder_text)
         grammar_issues = []
@@ -284,18 +299,21 @@ class ResumeParser:
             grammar_issues.append(issue)
         return grammar_issues
     
-    def process_resume(self, path, found_keywords, Extract_sections):
+    def process_resume(self, path, found_keyword_section, Extract_sections):
         text__ = self.parse_pdf(path)
         sections_text = self.segregate_sections(text__)
         formatted_text = self.extract_and_format_sections(sections_text, Extract_sections)
-        placeholder_text, keyword_placeholders = self.replace_keywords_with_placeholders(formatted_text, found_keywords)
+        placeholder_text, keyword_placeholders = self.replace_keywords_with_placeholders(formatted_text, found_keyword_section)
+        placeholder_text = self.replace_placeholders_with_keywords(placeholder_text, keyword_placeholders)
         grammar_issues = self.grammar_check(placeholder_text)
         return grammar_issues
     
-    def grammar_issue_check(self, path, found_keywords, Extract_sections):
+    def grammar_issue_check(self, path, found_keyword_section, Extract_sections):
         issues = {}
         for section in Extract_sections:
-            grammar_issues = self.process_resume(path, found_keywords, [section])
+            grammar_issues = self.process_resume(path, found_keyword_section, [section])
+            if not grammar_issues:
+                grammar_issues = "no error found"
             issues[section] = grammar_issues
         return issues
     
@@ -307,6 +325,10 @@ class ResumeParser:
         text1 = " ".join(text.split("\n"))
         skills_found = self.extract_skills_from_resume(text)
         found_keywords = self.extract_keyword_variations_from_resume(text)
+        text__ = self.parse_pdf(path)
+        sections_text = self.segregate_sections(text__)
+        formatted_text = self.extract_and_format_sections(sections_text, Extract_sections)
+        found_keyword_section = self.extract_keyword_variations_from_formatted_text(formatted_text)
         
         name, name_suggestion = self.extract_name(text)
         contact_number, contact_suggestion = self.extract_contact_number_from_resume(text)
@@ -314,7 +336,7 @@ class ResumeParser:
         github_urls =  self.extract_github_urls_from_pdf(path)     
         github_urls_suggestions = self.is_valid_url(github_urls)
         linkedin_urls =  self.extract_linkedIn_urls_from_pdf(path)
-        section_by_grammer_issues = self.grammar_issue_check(path, found_keywords, Extract_sections)
+        section_by_grammer_issues = self.grammar_issue_check(path, found_keyword_section, Extract_sections)
 
         suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions
 
