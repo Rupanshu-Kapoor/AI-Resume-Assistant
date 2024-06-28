@@ -2,8 +2,8 @@
 from pdfminer.high_level import extract_text
 from flask import jsonify
 import re, fitz, requests, logging  
-from config import data_science_skills, keyword_variations, essential_skills, quality_mapping
-from config import required_sections, linkedin_domain, github_domain, basic_informations
+from config import data_science_skills, keyword_variations, essential_skills, quality_mapping, Extract_sections
+from config import required_sections, linkedin_domain, github_domain, basic_informations, section_headers
 from spacy.matcher import Matcher
 import language_tool_python
 tool = language_tool_python.LanguageTool('en-US')
@@ -231,27 +231,74 @@ class ResumeParser:
                 missing_information.append(section)
         return missing_information
     
-    def grammar_check(self, parsed_resume):
-        text = parsed_resume["new_text"]
-        matches = tool.check(text)
-        corrected_text = tool.correct(text)
+    def parse_pdf(self, pdf_path):
+        doc = fitz.open(pdf_path)
+        text__ = ""
+        for page in doc:
+            text__ += page.get_text()
+        return text__
+    
+    def segregate_sections(self,text__):
+        sections_text = {}
+        current_section = None
+        lines = text__.splitlines()
+        for line in lines:
+            clean_line = line.strip().upper()
+            if clean_line in section_headers:
+                current_section = clean_line
+                sections_text[current_section] = []
+            elif current_section:
+                if clean_line not in section_headers:
+                    sections_text[current_section].append(line.strip())
+        return sections_text
+        
+    def extract_and_format_sections(self, sections_text, Extract_sections):
+        formatted_text = ""
+        for section in Extract_sections:
+            if section in sections_text:
+                section_content = " ".join(sections_text[section]).replace('\n', ' ')
+                formatted_text += f"{section}:\n{section_content}\n\n"
+        return formatted_text
+    
+    def replace_keywords_with_placeholders(self, fromatted_text, found_keywords):
+        placeholder_text = fromatted_text
+        keyword_placeholders = {}
+        
+        for i, keyword in enumerate(found_keywords):
+            placeholder = f"{{KEYWORD_{i}}}"
+            keyword_placeholders[placeholder] = keyword
+            placeholder_text = re.sub(r'\b' + re.escape(keyword) + r'\b', placeholder, placeholder_text)
+            
+        return placeholder_text, keyword_placeholders
+    
+    def grammar_check(self, placeholder_text):
+        matches = tool.check(placeholder_text)
         grammar_issues = []
         for match in matches:
             issue = {
+                "context": match.context, 
                 "error": match.message,
-                "suggested_correction": match.replacements,
-                "context": match.context,
-                "rule_id": match.ruleId
+                "rule_id": match.ruleId,
+                "suggested_correction": match.replacements
             }
             grammar_issues.append(issue)
-            grammar_result = {
-            "original_text": text,
-            "grammar_issues": grammar_issues,
-            "corrected_text": corrected_text
-            }
-
-        return grammar_result
-            
+        return grammar_issues
+    
+    def process_resume(self, path, found_keywords, Extract_sections):
+        text__ = self.parse_pdf(path)
+        sections_text = self.segregate_sections(text__)
+        formatted_text = self.extract_and_format_sections(sections_text, Extract_sections)
+        placeholder_text, keyword_placeholders = self.replace_keywords_with_placeholders(formatted_text, found_keywords)
+        grammar_issues = self.grammar_check(placeholder_text)
+        return grammar_issues
+    
+    def grammar_issue_check(self, path, found_keywords, Extract_sections):
+        issues = {}
+        for section in Extract_sections:
+            grammar_issues = self.process_resume(path, found_keywords, [section])
+            issues[section] = grammar_issues
+        return issues
+    
     def parse_text(self, path):
         logger = logging.getLogger(__name__)
         resume_data = {}
@@ -267,7 +314,7 @@ class ResumeParser:
         github_urls =  self.extract_github_urls_from_pdf(path)     
         github_urls_suggestions = self.is_valid_url(github_urls)
         linkedin_urls =  self.extract_linkedIn_urls_from_pdf(path)
-
+        section_by_grammer_issues = self.grammar_issue_check(path, found_keywords, Extract_sections)
 
         suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions
 
@@ -289,6 +336,7 @@ class ResumeParser:
             "contact_number": contact_number,
             "email": email,
             "linkedin_urls": linkedin_urls,
+            "grammer_issues_by_section": section_by_grammer_issues,
             "github_urls": github_urls,            
             "skills": skills_found,
             "found_keywords": found_keywords,
@@ -326,7 +374,5 @@ class ResumeParser:
         if sections_not_capitalized:
             resume_data["sections_not_capitalized"] = sections_not_capitalized
 
-        grammar_check_result = self.grammar_check(resume_data)
-        resume_data["grammar_check_result"] = grammar_check_result
         return jsonify(resume_data)
     

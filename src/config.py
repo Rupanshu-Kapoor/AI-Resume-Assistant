@@ -136,3 +136,9 @@ keyword_variations = {
         "Advanced ML": ["Advanced ML", "Advanced_ML", "Advanced Machine Learning", "Advanced_Machine_Learning", "Advanced-ML"],
         "Advanced DL": ["Advanced DL", "Advanced_DL", "Advanced Deep Learning", "Advanced_Deep_Learning", "Advanced-DL"]
     }
+
+Extract_sections = ["CAREER OBJECTIVE", "PROFILE SUMMARY"]
+
+section_headers = ["CAREER OBJECTIVE", "PROFILE SUMMARY", "EDUCATION","ACADEMIC PROFILE", "WORK EXPERIENCE", "PROJECT",
+                   "PERSONAL SKILLS", "PERSONAL INFORMATION", "REFERENCES","EXTRACURRICULAR ACTIVITIES", "TECHNICAL SKILLS", "KEY SKILLS", 
+                   "ADDITIONAL INFORMATION", "DESCRIPTION", "CERTIFICATIONS & ACADEMIC ENDEAVOURS","AWARDS & ACCOLADES", "SOFTWARE SKILLS", "AWARDS"]
