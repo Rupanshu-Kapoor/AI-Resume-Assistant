@@ -138,7 +138,7 @@ class ResumeParser:
         found_keywords = []
         for keyword, variations in keyword_variations.items():
             for variation in variations:
-                if variation in text: 
+                if variation.lower() in text.lower(): 
                     found_keywords.append(variation)
                     break  
 
@@ -148,7 +148,7 @@ class ResumeParser:
         found_keyword_section = []
         for keyword, variations in keyword_variations.items():
             for variation in variations:
-                if variation in formatted_text: 
+                if variation.lower() in formatted_text.lower(): 
                     found_keyword_section.append(variation)
                     break  
 
