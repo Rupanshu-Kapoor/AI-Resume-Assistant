@@ -312,6 +312,145 @@ class ResumeParser:
             issues[section] = grammar_issues
         return issues
     
+    def normalize_font_name(self,font_name):
+        if '-' in font_name:
+            font_name = font_name.split('-')[0]
+        if '+' in font_name:
+            font_name = font_name.split('+')[1]
+        return font_name
+
+    
+    def extract_text_properties(self, pdf_path, predefined_terms):
+        text_properties = []
+        current_phrase = ""
+        current_font_size = None
+        current_font_name = None
+        current_page_num = None
+
+        special_characters = set("●▪•!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+
+        def add_current_phrase():
+            nonlocal current_phrase
+            if current_phrase.strip():
+                flag = any(current_phrase in term for term in predefined_terms)
+                if not flag:
+                    text_properties.append({
+                        "text": current_phrase,
+                        "font_size": current_font_size,
+                        "font_name": current_font_name,
+                        "page_num": current_page_num
+                    })
+                current_phrase = ""
+
+        for page_layout in extract_pages(pdf_path):
+            for element in page_layout:
+                if isinstance(element, LTTextContainer):
+                    for text_line in element:
+                        if isinstance(text_line, LTTextLineHorizontal):
+                            for character in text_line:
+                                if isinstance(character, LTChar):
+                                    text = character.get_text()
+                                    font_size = round(character.size, 2)
+                                    font_name = self.normalize_font_name(character.fontname)
+                                    page_num = page_layout.pageid
+
+                                    if text.isspace() or text in special_characters:
+                                        add_current_phrase()
+                                        continue
+
+                                    if (font_size != current_font_size or font_name != current_font_name or
+                                        page_num != current_page_num):
+                                        add_current_phrase()
+                                        current_font_size = font_size
+                                        current_font_name = font_name
+                                        current_page_num = page_num
+
+                                    current_phrase += text
+
+                            add_current_phrase()
+
+        return text_properties
+    
+    def group_similar_fonts(self,text_properties, tolerance=0.5):
+        grouped_properties = defaultdict(list)
+        
+        for prop in text_properties:
+            rounded_size = round(prop["font_size"] / tolerance) * tolerance
+            key = (prop["font_name"], rounded_size)
+            grouped_properties[key].append(prop)
+
+        return grouped_properties
+    
+
+
+
+    def identify_different_fonts_and_sizes(self, grouped_properties):
+        most_common_group = max(grouped_properties.values(), key=len)
+        most_common_key = None
+        for key, group in grouped_properties.items():
+            if group == most_common_group:
+                most_common_key = key
+                break
+
+        different_texts = []
+
+        for key, group in grouped_properties.items():
+            if group != most_common_group:
+                for prop in group:
+                    reason = []
+                    if key[1] != most_common_key[1]:
+                        reason.append(f"size not {most_common_key[1]}")
+                    if key[0] != most_common_key[0]:
+                        reason.append(f"font not {most_common_key[0]}")
+                    different_texts.append({
+                        "page_num": prop['page_num'],
+                        "text": prop['text'],
+                        "found_size": prop['font_size'],
+                        "found_font_name": prop['font_name'],
+                        "reason": ", ".join(reason)
+                    })
+
+        return different_texts
+
+    # def group_similar_fonts(self, text_properties, tolerance=0.5):
+    #     grouped_properties = defaultdict(list)
+        
+    #     for prop in text_properties:
+    #         rounded_size = round(prop["font_size"] / tolerance) * tolerance
+    #         key = (prop["font_name"], rounded_size)
+    #         grouped_properties[key].append(prop)
+
+    #     return grouped_properties
+
+
+    # def identify_different_fonts_and_sizes(self, grouped_properties):
+    #     most_common_group = max(grouped_properties.values(), key=len)
+    #     most_common_key = None
+    #     for key, group in grouped_properties.items():
+    #         if group == most_common_group:
+    #             most_common_key = key
+    #             break
+
+    #     different_texts = []
+
+    #     for key, group in grouped_properties.items():
+    #         if group != most_common_group:
+    #             for prop in group:
+    #                 reason = []
+    #                 if key[1] != most_common_key[1]:
+    #                     reason.append(f"size not {most_common_key[1]}")
+    #                 if key[0] != most_common_key[0]:
+    #                     reason.append(f"font not {most_common_key[0]}")
+    #                 different_texts.append({
+    #                     "page_num": prop['page_num'],
+    #                     "text": prop['text'],
+    #                     "found_size": prop['font_size'],
+    #                     "found_font_name": prop['font_name'],
+    #                     "reason": ", ".join(reason)
+    #                 })
+
+    #     return different_texts
+    
     def parse_text(self, path):
         logger = logging.getLogger(__name__)
         resume_data = {}
@@ -333,6 +472,20 @@ class ResumeParser:
         section_by_grammer_issues = self.grammar_issue_check(text, found_keyword_section, Extract_sections)
 
         suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions
+
+        predefined_terms = [name, email]
+        predefined_terms.extend(required_sections)
+        text_properties = self.extract_text_properties(path, predefined_terms)
+        grouped_properties = self.group_similar_fonts(text_properties)
+        different_texts = self.identify_different_fonts_and_sizes(grouped_properties)
+
+        font_suggestions = []
+        for item in different_texts:
+            suggeestion = f"""Formatting issue at Page: {item['page_num']}, Text: {item['text']}, Reason: {item['reason']},
+                Found font size: {item['found_size']}, Found font name: {item['found_font_name']}"""
+            font_suggestions.append(suggeestion)
+            # print(f"Page: {item['page_num']}, Text: {item['text']}, Reason: {item['reason']}, "
+                #   f"Found Size: {item['found_size']}, Found Font Name: {item['found_font_name']}")
 
         # Adding suggestion if name, contact number, and email are not found
         if not name:
@@ -358,7 +511,8 @@ class ResumeParser:
             "skills": skills_found,
             "found_keywords": found_keywords,
             "text": text,
-            "new_text": text1
+            "new_text": text1,
+            "font_suggestions": font_suggestions
         }
         resume_data["text"] = [text]
         
