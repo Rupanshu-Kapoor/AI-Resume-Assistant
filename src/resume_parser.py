@@ -13,11 +13,6 @@ tool = language_tool_python.LanguageTool('en-US')
 
 
 class ResumeParser:
-    def __init__(self):
-        pass
-
-    # def extract_text_from_pdf(self, pdf_path):
-    #     return extract_text(pdf_path)
     
     def extract_contact_number_from_resume(self, text):
         contact_number = None
@@ -412,45 +407,7 @@ class ResumeParser:
 
         return different_texts
 
-    # def group_similar_fonts(self, text_properties, tolerance=0.5):
-    #     grouped_properties = defaultdict(list)
-        
-    #     for prop in text_properties:
-    #         rounded_size = round(prop["font_size"] / tolerance) * tolerance
-    #         key = (prop["font_name"], rounded_size)
-    #         grouped_properties[key].append(prop)
 
-    #     return grouped_properties
-
-
-    # def identify_different_fonts_and_sizes(self, grouped_properties):
-    #     most_common_group = max(grouped_properties.values(), key=len)
-    #     most_common_key = None
-    #     for key, group in grouped_properties.items():
-    #         if group == most_common_group:
-    #             most_common_key = key
-    #             break
-
-    #     different_texts = []
-
-    #     for key, group in grouped_properties.items():
-    #         if group != most_common_group:
-    #             for prop in group:
-    #                 reason = []
-    #                 if key[1] != most_common_key[1]:
-    #                     reason.append(f"size not {most_common_key[1]}")
-    #                 if key[0] != most_common_key[0]:
-    #                     reason.append(f"font not {most_common_key[0]}")
-    #                 different_texts.append({
-    #                     "page_num": prop['page_num'],
-    #                     "text": prop['text'],
-    #                     "found_size": prop['font_size'],
-    #                     "found_font_name": prop['font_name'],
-    #                     "reason": ", ".join(reason)
-    #                 })
-
-    #     return different_texts
-    
     def parse_text(self, path):
         logger = logging.getLogger(__name__)
         resume_data = {}
@@ -484,10 +441,7 @@ class ResumeParser:
             suggeestion = f"""Formatting issue at Page: {item['page_num']}, Text: {item['text']}, Reason: {item['reason']},
                 Found font size: {item['found_size']}, Found font name: {item['found_font_name']}"""
             font_suggestions.append(suggeestion)
-            # print(f"Page: {item['page_num']}, Text: {item['text']}, Reason: {item['reason']}, "
-                #   f"Found Size: {item['found_size']}, Found Font Name: {item['found_font_name']}")
 
-        # Adding suggestion if name, contact number, and email are not found
         if not name:
             suggestions += "Please add  name to the resume. "
         if not contact_number:
