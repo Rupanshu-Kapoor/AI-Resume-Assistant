@@ -1,5 +1,7 @@
 # python file to parse different section from resume
-from pdfminer.high_level import extract_text
+from pdfminer.high_level import extract_pages
+from pdfminer.layout import LTTextContainer, LTChar, LTTextLineHorizontal
+from collections import defaultdict
 from flask import jsonify
 import re, fitz, requests, logging  
 from config import data_science_skills, keyword_variations, essential_skills, quality_mapping, Extract_sections
@@ -9,12 +11,13 @@ import language_tool_python
 tool = language_tool_python.LanguageTool('en-US')
 
 
+
 class ResumeParser:
     def __init__(self):
         pass
 
-    def extract_text_from_pdf(self, pdf_path):
-        return extract_text(pdf_path)
+    # def extract_text_from_pdf(self, pdf_path):
+    #     return extract_text(pdf_path)
     
     def extract_contact_number_from_resume(self, text):
         contact_number = None
@@ -240,14 +243,7 @@ class ResumeParser:
             if not resume_data.get(section):
                 missing_information.append(section)
         return missing_information
-    
-    def parse_pdf(self, pdf_path):
-        doc = fitz.open(pdf_path)
-        text__ = ""
-        for page in doc:
-            text__ += page.get_text()
-        return text__
-    
+        
     def segregate_sections(self,text__):
         sections_text = {}
         current_section = None
@@ -299,19 +295,18 @@ class ResumeParser:
             grammar_issues.append(issue)
         return grammar_issues
     
-    def process_resume(self, path, found_keyword_section, Extract_sections):
-        text__ = self.parse_pdf(path)
-        sections_text = self.segregate_sections(text__)
+    def process_resume(self, text, found_keyword_section, Extract_sections):
+        sections_text = self.segregate_sections(text)
         formatted_text = self.extract_and_format_sections(sections_text, Extract_sections)
         placeholder_text, keyword_placeholders = self.replace_keywords_with_placeholders(formatted_text, found_keyword_section)
         placeholder_text = self.replace_placeholders_with_keywords(placeholder_text, keyword_placeholders)
         grammar_issues = self.grammar_check(placeholder_text)
         return grammar_issues
     
-    def grammar_issue_check(self, path, found_keyword_section, Extract_sections):
+    def grammar_issue_check(self, text, found_keyword_section, Extract_sections):
         issues = {}
         for section in Extract_sections:
-            grammar_issues = self.process_resume(path, found_keyword_section, [section])
+            grammar_issues = self.process_resume(text, found_keyword_section, [section])
             if not grammar_issues:
                 grammar_issues = "no error found"
             issues[section] = grammar_issues
@@ -325,8 +320,7 @@ class ResumeParser:
         text1 = " ".join(text.split("\n"))
         skills_found = self.extract_skills_from_resume(text)
         found_keywords = self.extract_keyword_variations_from_resume(text)
-        text__ = self.parse_pdf(path)
-        sections_text = self.segregate_sections(text__)
+        sections_text = self.segregate_sections(text)
         formatted_text = self.extract_and_format_sections(sections_text, Extract_sections)
         found_keyword_section = self.extract_keyword_variations_from_formatted_text(formatted_text)
         
@@ -336,7 +330,7 @@ class ResumeParser:
         github_urls =  self.extract_github_urls_from_pdf(path)     
         github_urls_suggestions = self.is_valid_url(github_urls)
         linkedin_urls =  self.extract_linkedIn_urls_from_pdf(path)
-        section_by_grammer_issues = self.grammar_issue_check(path, found_keyword_section, Extract_sections)
+        section_by_grammer_issues = self.grammar_issue_check(text, found_keyword_section, Extract_sections)
 
         suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions
 
@@ -351,6 +345,7 @@ class ResumeParser:
             suggestions += " add the github_urls to the resume. "        
         if not linkedin_urls:
             suggestions += " add the linkedin_urls to the resume. "                 
+
 
         resume_data = {
             "name": name,
