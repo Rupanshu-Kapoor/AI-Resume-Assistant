@@ -3,9 +3,9 @@ from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTChar, LTTextLineHorizontal
 from collections import defaultdict
 from flask import jsonify
-import re, fitz, requests, logging  
-from config import data_science_skills, keyword_variations, essential_skills, quality_mapping, Extract_sections
-from config import required_sections, linkedin_domain, github_domain, basic_informations, section_headers
+import re, fitz, requests, logging, datetime
+from config import data_science_skills, keyword_variations, essential_skills, quality_mapping, Extract_sections, suggested_projects
+from config import required_sections, linkedin_domain, github_domain, basic_informations, section_headers, common_projects
 from spacy.matcher import Matcher
 import language_tool_python
 tool = language_tool_python.LanguageTool('en-US')
@@ -239,18 +239,20 @@ class ResumeParser:
                 missing_information.append(section)
         return missing_information
         
-    def segregate_sections(self,text__):
+    def segregate_sections(self, text__):
+        header_pattern = re.compile(rf'^\s*({"|".join(re.escape(header) for header in section_headers)}):?\s*$', re.IGNORECASE)
         sections_text = {}
         current_section = None
         lines = text__.splitlines()
         for line in lines:
-            clean_line = line.strip().upper()
-            if clean_line in section_headers:
-                current_section = clean_line
+            clean_line = line.strip()
+            match = header_pattern.match(clean_line)
+            if match:
+                current_section = match.group(1).upper()
                 sections_text[current_section] = []
             elif current_section:
-                if clean_line not in section_headers:
-                    sections_text[current_section].append(line.strip())
+                sections_text[current_section].append(line.strip())
+        
         return sections_text
         
     def extract_and_format_sections(self, sections_text, Extract_sections):
@@ -406,6 +408,127 @@ class ResumeParser:
                     })
 
         return different_texts
+    
+    def parse_education_dates(self, sections_text):
+        # Check if the 'ACADEMIC PROFILE' section is in the text
+        if 'ACADEMIC PROFILE' not in sections_text:
+            return "ACADEMIC PROFILE section is not here."
+        
+        # Define the date patterns to match various date formats
+        date_pattern = (
+            r'\b\d{1,2}/\d{4}\b|'  # MM/YYYY
+            r'\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}\b|'  # Month YYYY
+            r'\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2},?\s*\d{4}\b|'  # Month DD, YYYY
+            r'\b\d{4}\b|'  # YYYY
+            r'\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[a-z]*/?\d{4}\b|'  # Month/YYYY
+            r'\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[a-z]*\d{4}\s*-\s*(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[a-z]*\d{4}\b'  # Month/YYYY - Month/YYYY
+        )
+
+        all_dates = []
+
+        # Iterate over the entries in the EDUCATION section
+        for entry in sections_text['ACADEMIC PROFILE']:
+            entry = entry.lower()
+            matches = re.findall(date_pattern, entry)
+            if matches:
+                if len(matches) == 2:
+                    all_dates.append(f"{matches[0]} {matches[1]}")
+                else:
+                    all_dates.extend(matches)
+
+        return all_dates
+
+
+    def convert_to_date(self, date_str):
+        # Mapping of month names and abbreviations to their numeric equivalents
+        month_map = {
+            'jan': 1, 'january': 1, 'feb': 2, 'february': 2,
+            'mar': 3, 'march': 3, 'apr': 4, 'april': 4,
+            'may': 5, 'jun': 6, 'june': 6, 'jul': 7,
+            'july': 7, 'aug': 8, 'august': 8, 'sep': 9,
+            'september': 9, 'oct': 10, 'october': 10,
+            'nov': 11, 'november': 11, 'dec': 12, 'december': 12,
+            '01': 1, '02': 2, '03': 3, '04': 4,
+            '05': 5, '06': 6, '07': 7, '08': 8,
+            '09': 9, '10': 10, '11': 11, '12': 12
+        }
+
+        # Regex patterns to match different date formats
+        pattern_mm_yyyy = re.compile(r'(\d{1,2})/(\d{4})')
+        pattern_mm_yyyy_space = re.compile(r'(\d{1,2})\s(\d{4})')
+        pattern_month_yyyy = re.compile(r'([a-zA-Z]+)\s?(\d{4})')
+        pattern_yyyy = re.compile(r'(\d{4})')
+
+        def extract_date(date_str):
+            match_mm_yyyy = pattern_mm_yyyy.match(date_str)
+            match_mm_yyyy_space = pattern_mm_yyyy_space.match(date_str)
+            match_month_yyyy = pattern_month_yyyy.match(date_str)
+            match_yyyy = pattern_yyyy.match(date_str)
+
+            if match_mm_yyyy:
+                month = int(match_mm_yyyy.group(1))
+                year = int(match_mm_yyyy.group(2))
+            elif match_mm_yyyy_space:
+                month = int(match_mm_yyyy_space.group(1))
+                year = int(match_mm_yyyy_space.group(2))
+            elif match_month_yyyy:
+                month = month_map.get(match_month_yyyy.group(1).lower())
+                year = int(match_month_yyyy.group(2))
+            elif match_yyyy:
+                month = 1
+                year = int(match_yyyy.group(1))
+            else:
+                print("Invalid date format")
+
+            return datetime.date(year, month, 1)
+
+        date_parts = re.findall(r'[a-zA-Z]+\s?\d{4}|\d{1,2}/\d{4}|\d{1,2}\s?\d{4}|\d{4}', date_str)
+        
+        if len(date_parts) == 1:
+            # Standalone year or single date
+            start_date = extract_date(date_parts[0])
+            end_date = datetime.date(start_date.year, 12, 31)
+        elif len(date_parts) == 2:
+            # Date range
+            start_date = extract_date(date_parts[0])
+            end_date = extract_date(date_parts[1])
+        else:
+            print("Invalid date format")
+
+        return start_date, end_date
+
+
+    def date_time(self, date_parts):
+        converted_dates = []
+        for date_part in date_parts:
+                start_date, end_date = self.convert_to_date(date_part)
+                converted_dates.append((start_date, end_date))
+        return converted_dates  
+    
+
+    def check_chronological_order(self, converted_dates):
+        suggestion = ""
+        sorted_dates = sorted(converted_dates, key=lambda x: (x[1], x[0]), reverse=True)
+        if converted_dates == sorted_dates:
+            suggestion = "ACADEMIC PROFILE section is in chronological order."
+        else:
+            suggestion = "ACADEMIC PROFILE section is not in chronological order."
+
+        return suggestion
+    
+    def check_common_projects(self, projects_text):
+        found_projects = []
+        for project in common_projects:
+            if project.lower() in projects_text.lower():
+                found_projects.append(project)
+        return found_projects
+    
+    def check_imarticus_certifications(self, certifications_text):
+        if "imarticus" in certifications_text.lower():
+            return True
+        return False
+
+
 
 
     def parse_text(self, path):
@@ -419,6 +542,17 @@ class ResumeParser:
         sections_text = self.segregate_sections(text)
         formatted_text = self.extract_and_format_sections(sections_text, Extract_sections)
         found_keyword_section = self.extract_keyword_variations_from_formatted_text(formatted_text)
+        
+        
+
+        parsed_sections = self.segregate_sections(text)
+        projects = parsed_sections.get("PROJECTS", [])
+        certifications = parsed_sections.get("CERTIFICATIONS & ACADEMIC ENDEAVOURS", [])
+        projects_text = "\n".join(projects)
+        certifications_text = "\n".join(certifications)
+        found_imarticus_certification = self.check_imarticus_certifications(certifications_text)
+        found_projects = self.check_common_projects(projects_text)
+
         
         name, name_suggestion = self.extract_name(text)
         contact_number, contact_suggestion = self.extract_contact_number_from_resume(text)
@@ -435,6 +569,11 @@ class ResumeParser:
         text_properties = self.extract_text_properties(path, predefined_terms)
         grouped_properties = self.group_similar_fonts(text_properties)
         different_texts = self.identify_different_fonts_and_sizes(grouped_properties)
+        
+        
+        date_parts = self.parse_education_dates(sections_text)
+        converted_dates = self.date_time(date_parts) 
+        education_order_suggestion = self.check_chronological_order(converted_dates) 
 
         font_suggestions = []
         for item in different_texts:
@@ -460,6 +599,9 @@ class ResumeParser:
             "contact_number": contact_number,
             "email": email,
             "linkedin_urls": linkedin_urls,
+            # "date_parts": date_parts,
+            # "converted_dates" : converted_dates,
+            "education_order_suggestion": education_order_suggestion,
             "grammer_issues_by_section": section_by_grammer_issues,
             "github_urls": github_urls,            
             "skills": skills_found,
@@ -498,6 +640,19 @@ class ResumeParser:
 
         if sections_not_capitalized:
             resume_data["sections_not_capitalized"] = sections_not_capitalized
+            
+        if found_projects:
+            common_project = "Common projects found in Projects section: "
+            for project in found_projects:
+                common_project += project 
+        resume_data["common_projects"] = common_project 
+            
+        if found_imarticus_certification:
+            found_certification =  "Imarticus certification found in Certifications section."
+        else:
+            found_certification = "No Imarticus certification found in Certifications section."
+
+        resume_data["found_certification"] = found_certification       
 
         return jsonify(resume_data)
     

@@ -78,7 +78,7 @@ keyword_variations = {
         "RNN": [" RNN ", "RNN,", ",RNN", "Recurrent Neural Network", "RNN Algorithm","RNN"],
         "KNN": [" kNN ", "kNN,", ",kNN","K-Nearest Neighbours", "K_Nearest_Neighbours", "K-Nearest-Neighbours", "K Nearest Neighbours", "KNN"],
         "LSTM": ["LSTM", "Long Short-Term Memory", "LSTM Network", "LSTM Algorithm"],
-        "GAN": [" GAN ", "GAN,", ",GAN", "Generative Adversarial Network", "GAN Algorithm","GAN"],
+        "GAN": [" GAN ", "GAN,", ",GAN", "Generative Adversarial Network", "GAN Algorithm"," GAN "],
         "YOLO": ["YOLO", "You Only Look Once", "YOLO_Algorithm"],
         "Clustering": ["Clustering", "Clustering_Algorithms", "Data_Clustering"],
         "Classification": ["Classification", "Classification_Algorithms", "Data_Classification"],
@@ -168,6 +168,20 @@ keyword_variations = {
 
 Extract_sections = ["CAREER OBJECTIVE", "PROFILE SUMMARY"]
 
-section_headers = ["CAREER OBJECTIVE", "PROFILE SUMMARY", "EDUCATION","ACADEMIC PROFILE", "WORK EXPERIENCE", "PROJECTS","CERTIFICATIONS","SKILLS"
-                   "PERSONAL SKILLS", "PERSONAL INFORMATION", "REFERENCES","EXTRACURRICULAR ACTIVITIES", "TECHNICAL SKILLS", "KEY SKILLS", 
-                   "ADDITIONAL INFORMATION", "DESCRIPTION", "CERTIFICATIONS & ACADEMIC ENDEAVOURS","AWARDS & ACCOLADES", "SOFTWARE SKILLS", "AWARDS"]
+section_headers = [
+        "CAREER OBJECTIVE", "PROFILE SUMMARY", "EDUCATION","ADDITIONAL INFORMATION AND HOBBIES",
+        "ACADEMIC PROFILE", "WORK EXPERIENCE", "PROJECTS", "CERTIFICATIONS","SKILLS",
+        "PERSONAL SKILLS", "PERSONAL INFORMATION", "REFERENCES", 
+        "EXTRACURRICULAR ACTIVITIES", "TECHNICAL SKILLS", "KEY SKILLS", 
+        "ADDITIONAL INFORMATION", "DESCRIPTION", "CERTIFICATIONS & ACADEMIC ENDEAVOURS", 
+        "AWARDS & ACCOLADES", "SOFTWARE SKILLS", "AWARDS"
+    ]
+
+common_projects = ["Titanic Survival Prediction","Iris Flower Classification","MNIST Digit Classification",
+                   "Spam Email Detection","Handwritten Digit Recognition","Heart Disease Prediction","House Price",
+                   "Diabetes Prediction","Sentiment Analysis on Twitter Data","Churn Prediction for Telecom Customers",
+                   "Wine Quality Prediction"]
+
+suggested_projects = ["Predicting Patient Readmissions in Hospitals",
+                      "Optimizing Ad Spend with Machine Learning Models","Developing a Fake News Detection System",
+                      "Developing an AI Chatbot for Customer Service Automation","Personalized Health Recommendations Using Wearable Data"]
