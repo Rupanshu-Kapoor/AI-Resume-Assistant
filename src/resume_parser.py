@@ -411,8 +411,10 @@ class ResumeParser:
     
     def parse_education_dates(self, sections_text, section_name):
         # Check if the 'ACADEMIC PROFILE' section is in the text
+        suggest = ""
         if section_name not in sections_text:
-            return f"{section_name} section is not here."
+            suggest = f"{section_name} section is not here."
+            
         
         # Define the date patterns to match various date formats
         date_pattern = (
@@ -528,7 +530,37 @@ class ResumeParser:
             return True
         return False
 
+    def ACADEMIC_PROFILE_check(self, sections_text):
+        education_order_suggestion = ""
+        education_suggestion = ""   
+        
+        if "ACADEMIC PROFILE" in sections_text:
+            education_date = self.parse_education_dates(sections_text, "ACADEMIC PROFILE")
+            if education_date:
+                converted_education_dates = self.date_time(education_date) 
+                education_order_suggestion = self.check_chronological_order(converted_education_dates)
+            else:
+                education_suggestion = "No valid dates found in ACADEMIC PROFILE section. "
+        else:
+            education_suggestion = "ACADEMIC PROFILE is not in resume. "
+        
+        return education_order_suggestion, education_suggestion
 
+    def experience_check(self, sections_text):
+        experience_order_suggestion = ""
+        experience_suggestion = ""   
+        
+        if "WORK EXPERIENCE" in sections_text:
+            experience_date = self.parse_education_dates(sections_text, "WORK EXPERIENCE")
+            if experience_date:
+                converted_experience_dates = self.date_time(experience_date) 
+                experience_order_suggestion = self.check_chronological_order(converted_experience_dates)
+            else:
+                experience_suggestion = "No valid dates found in EXPERIENCE section. "
+        else:
+            experience_suggestion = "EXPERIENCE is not in resume. "
+        
+        return experience_order_suggestion, experience_suggestion
 
 
     def parse_text(self, path):
@@ -563,24 +595,18 @@ class ResumeParser:
         linkedin_urls =  self.extract_linkedIn_urls_from_pdf(path)
         section_by_grammer_issues = self.grammar_issue_check(text, found_keyword_section, Extract_sections)
 
-        suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions
+
+        education_order_suggestion, education_suggestion = self.ACADEMIC_PROFILE_check(sections_text)
+        experience_order_suggestion, experience_suggestion = self.experience_check(sections_text)   
+        
+        suggestions = name_suggestion + contact_suggestion + email_suggestion + github_urls_suggestions + education_suggestion + experience_suggestion
 
         predefined_terms = [name, email]
         predefined_terms.extend(required_sections)
         text_properties = self.extract_text_properties(path, predefined_terms)
         grouped_properties = self.group_similar_fonts(text_properties)
         different_texts = self.identify_different_fonts_and_sizes(grouped_properties)
-        
-        
-        education_date = self.parse_education_dates(sections_text, "ACADEMIC PROFILE")
-        converted_educcation_dates = self.date_time(education_date) 
-        education_order_suggestion = self.check_chronological_order(converted_educcation_dates) 
-
-        expericence_date = self.parse_education_dates(sections_text, "EXPERIENCE")
-        converted_experience_dates = self.date_time(expericence_date) 
-        education_order_suggestion = self.check_chronological_order(converted_experience_dates) 
-
-
+     
         font_suggestions = []
         for item in different_texts:
             suggeestion = f"""Formatting issue at Page: {item['page_num']}, Text: {item['text']}, Reason: {item['reason']},
@@ -596,7 +622,8 @@ class ResumeParser:
         if not github_urls:
             suggestions += " add the github_urls to the resume. "        
         if not linkedin_urls:
-            suggestions += " add the linkedin_urls to the resume. "                 
+            suggestions += " add the linkedin_urls to the resume. "   
+                       
 
 
         resume_data = {
@@ -607,6 +634,7 @@ class ResumeParser:
             "linkedin_urls": linkedin_urls,
             # "date_parts": date_parts,
             # "converted_dates" : converted_dates,
+            "experience_order_suggestion": experience_order_suggestion,
             "education_order_suggestion": education_order_suggestion,
             "grammer_issues_by_section": section_by_grammer_issues,
             "github_urls": github_urls,            
@@ -647,18 +675,37 @@ class ResumeParser:
         if sections_not_capitalized:
             resume_data["sections_not_capitalized"] = sections_not_capitalized
             
+            
         if found_projects:
             common_project = "Common projects found in Projects section: "
             for project in found_projects:
-                common_project += project 
-        resume_data["common_projects"] = common_project 
-            
+                common_project += project
+            resume_data["common_projects"] = common_project     
+        else:
+            pass         
+        
+        
         if found_imarticus_certification:
             found_certification =  "Imarticus certification found in Certifications section."
         else:
             found_certification = "No Imarticus certification found in Certifications section."
+        resume_data["found_certification"] = found_certification   
+        
+        
+        
+        # EXPERIENCE = parsed_sections.get("EXPERIENCE", [])
+        # if not EXPERIENCE:
+        #     break
+        # else:
+        #     found_keywords = self.extract_keyword_variations_from_resume(text)
+        #     for keyword in found_keywords:
+        #         if  any(keyword.lower() in exp.lower() for exp in EXPERIENCE):
+        #             break
+        #     else:
+        #         resume_data["work_experience_check"] = "Experience is not relevant to Data science. "
+                
 
-        resume_data["found_certification"] = found_certification       
+           
 
         return jsonify(resume_data)
     
