@@ -239,11 +239,11 @@ class ResumeParser:
                 missing_information.append(section)
         return missing_information
         
-    def segregate_sections(self, text__):
+    def segregate_sections(self, text):
         header_pattern = re.compile(rf'^\s*({"|".join(re.escape(header) for header in section_headers)}):?\s*$', re.IGNORECASE)
         sections_text = {}
         current_section = None
-        lines = text__.splitlines()
+        lines = text.splitlines()
         for line in lines:
             clean_line = line.strip()
             match = header_pattern.match(clean_line)
@@ -409,10 +409,10 @@ class ResumeParser:
 
         return different_texts
     
-    def parse_education_dates(self, sections_text):
+    def parse_education_dates(self, sections_text, section_name):
         # Check if the 'ACADEMIC PROFILE' section is in the text
-        if 'ACADEMIC PROFILE' not in sections_text:
-            return "ACADEMIC PROFILE section is not here."
+        if section_name not in sections_text:
+            return f"{section_name} section is not here."
         
         # Define the date patterns to match various date formats
         date_pattern = (
@@ -426,8 +426,8 @@ class ResumeParser:
 
         all_dates = []
 
-        # Iterate over the entries in the EDUCATION section
-        for entry in sections_text['ACADEMIC PROFILE']:
+        # Iterate over the entries in the section_name
+        for entry in sections_text[section_name]:
             entry = entry.lower()
             matches = re.findall(date_pattern, entry)
             if matches:
@@ -533,6 +533,7 @@ class ResumeParser:
 
     def parse_text(self, path):
         logger = logging.getLogger(__name__)
+        logging.getLogger("pdfminer").setLevel(logging.WARNING)
         resume_data = {}
         logger.debug('parsing text')
         text = self.extract_text_from_pdf(path)
@@ -571,9 +572,14 @@ class ResumeParser:
         different_texts = self.identify_different_fonts_and_sizes(grouped_properties)
         
         
-        date_parts = self.parse_education_dates(sections_text)
-        converted_dates = self.date_time(date_parts) 
-        education_order_suggestion = self.check_chronological_order(converted_dates) 
+        education_date = self.parse_education_dates(sections_text, "ACADEMIC PROFILE")
+        converted_educcation_dates = self.date_time(education_date) 
+        education_order_suggestion = self.check_chronological_order(converted_educcation_dates) 
+
+        expericence_date = self.parse_education_dates(sections_text, "EXPERIENCE")
+        converted_experience_dates = self.date_time(expericence_date) 
+        education_order_suggestion = self.check_chronological_order(converted_experience_dates) 
+
 
         font_suggestions = []
         for item in different_texts:
