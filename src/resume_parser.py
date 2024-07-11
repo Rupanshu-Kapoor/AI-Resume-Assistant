@@ -410,7 +410,7 @@ class ResumeParser:
         return different_texts
     
     def parse_education_dates(self, sections_text, section_name):
-        # Check if the 'ACADEMIC PROFILE' section is in the text
+        # Check if the  section is in the text
         suggest = ""
         if section_name not in sections_text:
             suggest = f"{section_name} section is not here."
@@ -508,13 +508,13 @@ class ResumeParser:
         return converted_dates  
     
 
-    def check_chronological_order(self, converted_dates):
+    def check_chronological_order(self, converted_dates, section_name ):
         suggestion = ""
         sorted_dates = sorted(converted_dates, key=lambda x: (x[1], x[0]), reverse=True)
         if converted_dates == sorted_dates:
-            suggestion = "ACADEMIC PROFILE section is in chronological order."
+            suggestion = f"{section_name} section is in chronological order."
         else:
-            suggestion = "ACADEMIC PROFILE section is not in chronological order."
+            suggestion = f"{section_name} section is not in chronological order."
 
         return suggestion
     
@@ -538,7 +538,7 @@ class ResumeParser:
             education_date = self.parse_education_dates(sections_text, "ACADEMIC PROFILE")
             if education_date:
                 converted_education_dates = self.date_time(education_date) 
-                education_order_suggestion = self.check_chronological_order(converted_education_dates)
+                education_order_suggestion = self.check_chronological_order(converted_education_dates,"ACADEMIC PROFILE")
             else:
                 education_suggestion = "No valid dates found in ACADEMIC PROFILE section. "
         else:
@@ -554,7 +554,7 @@ class ResumeParser:
             experience_date = self.parse_education_dates(sections_text, "WORK EXPERIENCE")
             if experience_date:
                 converted_experience_dates = self.date_time(experience_date) 
-                experience_order_suggestion = self.check_chronological_order(converted_experience_dates)
+                experience_order_suggestion = self.check_chronological_order(converted_experience_dates,"WORK EXPERIENCE")
             else:
                 experience_suggestion = "No valid dates found in EXPERIENCE section. "
         else:
@@ -693,17 +693,16 @@ class ResumeParser:
         
         
         
-        # EXPERIENCE = parsed_sections.get("EXPERIENCE", [])
-        # if not EXPERIENCE:
-        #     break
-        # else:
-        #     found_keywords = self.extract_keyword_variations_from_resume(text)
-        #     for keyword in found_keywords:
-        #         if  any(keyword.lower() in exp.lower() for exp in EXPERIENCE):
-        #             break
-        #     else:
-        #         resume_data["work_experience_check"] = "Experience is not relevant to Data science. "
-                
+        EXPERIENCE = parsed_sections.get("WORK EXPERIENCE", [])
+        if EXPERIENCE:
+            for keyword, variations in keyword_variations.items():
+                for variation in variations:
+                    if any(variation.lower() in exp.lower() for exp in EXPERIENCE):
+                        break
+            else:
+                resume_data["work_experience_check"] = "Experience is not relevant to Data science. "
+        
+                    
 
            
 
