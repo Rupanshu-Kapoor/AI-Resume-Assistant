@@ -169,18 +169,18 @@ keyword_variations = {
 Extract_sections = ["CAREER OBJECTIVE", "PROFILE SUMMARY"]
 
 section_headers = [
-        "CAREER OBJECTIVE", "PROFILE SUMMARY", "EDUCATION","ADDITIONAL INFORMATION AND HOBBIES","EXPERIENCE",
-        "ACADEMIC PROFILE", "WORK EXPERIENCE", "PROJECTS", "CERTIFICATIONS","SKILLS",
+        "CAREER OBJECTIVE", "PROFILE SUMMARY", "WORK EXPERIENCE", "EDUCATION","ADDITIONAL INFORMATION AND HOBBIES",
+        "ACADEMIC PROFILE", "PROJECTS", "CERTIFICATIONS","SKILLS",
         "PERSONAL SKILLS", "PERSONAL INFORMATION", "REFERENCES", 
         "EXTRACURRICULAR ACTIVITIES", "TECHNICAL SKILLS", "KEY SKILLS", 
-        "ADDITIONAL INFORMATION", "DESCRIPTION", "CERTIFICATIONS & ACADEMIC ENDEAVOURS", 
+        "ADDITIONAL INFORMATION", "CERTIFICATIONS & ACADEMIC ENDEAVOURS", 
         "AWARDS & ACCOLADES", "SOFTWARE SKILLS", "AWARDS"
     ]
 
-common_projects = ["Titanic Survival Prediction","Iris Flower Classification","MNIST Digit Classification",
-                   "Spam Email Detection","Handwritten Digit Recognition","Heart Disease Prediction","House Price",
-                   "Diabetes Prediction","Sentiment Analysis on Twitter Data","Churn Prediction for Telecom Customers",
-                   "Wine Quality Prediction"]
+common_projects = ["Titanic","Iris","MNIST", "COVID-19", "Bank Churn",
+                   "Spam","Handwritten Digit","Heart Disease","House Price",
+                   "Diabetes","Twitter", "Churn",
+                   "Wine Quality", "Loan"]
 
 suggested_projects = ["Predicting Patient Readmissions in Hospitals",
                       "Optimizing Ad Spend with Machine Learning Models","Developing a Fake News Detection System",
